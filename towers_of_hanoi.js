@@ -13,6 +13,21 @@ function debug(message) {
   document.getElementById('debug').innerHTML += '<p>' + message + '</p>';
 }
 
+// Returns random integer in range [min, max].
+function random_int(min, max) {
+  return Math.floor(Math.random() * (max - min + 1) + min);
+}
+
+function shuffle(arr) {
+  arr.sort(function(a, b) { return Math.random() - 0.5; });
+}
+
+function generate_random_colour() {
+  // Colour choice isn't completely random -- don't want dark colours that lack contrast against towers.
+  var rgb = [random_int(0, 127), random_int(64, 192), random_int(128, 255)];
+  shuffle(rgb);
+  return 'rgb(' + rgb.join() + ')';
+}
 
 //===============
 // Event handling
@@ -91,13 +106,20 @@ ElementCoordinateFinder.prototype.get_offset_y = function() {
 // Towers
 //=======
 function Towers(ctx) {
-  this.count = 3;
+  this.towers_count = this.disks_count = 3;
   this.ctx = ctx;
   this.towers = [];
-
-  this.create();
-  this.towers[0].add_disk(new Disk());
+  this.create_towers();
+  this.add_initial_disks();
   this.draw();
+}
+
+Towers.prototype.add_initial_disks = function() {
+  var width = this.towers[0].base.width;
+  for(var i = 0; i < this.disks_count; i++) {
+    width -= 20;
+    this.towers[0].add_disk(new Disk(width, generate_random_colour() ));
+  }
 }
 
 Towers.prototype.draw = function() {
@@ -107,9 +129,9 @@ Towers.prototype.draw = function() {
   }
 }
 
-Towers.prototype.create = function() {
+Towers.prototype.create_towers = function() {
   var x = 0;
-  for(var i = 0; i < this.count; i++) {
+  for(var i = 0; i < this.towers_count; i++) {
     var tower = new Tower(x, 0, this.ctx);
     this.towers.push(tower);
     x += (11/10)*tower.base.width;
@@ -146,10 +168,13 @@ function Tower(x, y, ctx) {
   this.base.y = this.y + this.stem.height;
   this.stem.x = this.x + (this.base.width/2 - this.stem.width/2);
   this.stem.y = this.y;
+
+  this.top = this.base.y;
 }
 
 Tower.prototype.add_disk = function(disk) {
   disk.set_tower(this);
+  this.top = disk.y;
   this.disks.push(disk);
 }
 
@@ -171,7 +196,7 @@ Tower.prototype.draw_self = function() {
 }
 
 Tower.prototype.draw_disks = function() {
-  for(i in this.disks) {
+  for(var i = 0; i < this.disks.length; i++) {
     this.disks[i].draw();
   }
 }
@@ -180,18 +205,17 @@ Tower.prototype.draw_disks = function() {
 //=====
 // Disk
 //=====
-function Disk() { }
+function Disk(width, colour) {
+  this.colour = colour;
+  //this.width = this.tower.base.width - 20;
+  this.width = width;
+  this.height = 15;
+}
 
 Disk.prototype.set_tower = function(tower) {
   this.tower = tower;
-  this.update_position_and_size();
-}
-
-Disk.prototype.update_position_and_size = function() {
-  this.width = this.tower.base.width - 20;
-  this.height = 15;
   this.x = (this.tower.base.width - this.width)/2;
-  this.y = this.tower.base.y - this.height;
+  this.y = this.tower.top - this.height;
 }
 
 Disk.prototype.draw = function() {
@@ -200,7 +224,7 @@ Disk.prototype.draw = function() {
   this.tower.ctx.closePath();
 
   this.tower.ctx.save();
-  this.tower.ctx.fillStyle = '#ffa500';
+  this.tower.ctx.fillStyle = this.colour;
   this.tower.ctx.fill();
   this.tower.ctx.restore();
 }
