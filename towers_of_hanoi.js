@@ -106,9 +106,8 @@ ElementCoordinateFinder.prototype.get_offset_y = function() {
 // Towers
 //=======
 function Towers(ctx) {
-  this.towers_count = this.disks_count = 3;
   this.ctx = ctx;
-  this.towers = [];
+  this.towers_count = this.disks_count = 3;
   this.create_towers();
   this.add_initial_disks();
   this.draw();
@@ -130,6 +129,7 @@ Towers.prototype.draw = function() {
 }
 
 Towers.prototype.create_towers = function() {
+  this.towers = [];
   var x = 0;
   for(var i = 0; i < this.towers_count; i++) {
     var tower = new Tower(x, 0, this.ctx);
@@ -207,7 +207,6 @@ Tower.prototype.draw_disks = function() {
 //=====
 function Disk(width, colour) {
   this.colour = colour;
-  //this.width = this.tower.base.width - 20;
   this.width = width;
   this.height = 15;
 }
