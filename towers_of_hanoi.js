@@ -1,6 +1,7 @@
 function init() {
-  new Towers(document.getElementById('canvas').getContext('2d'));
-  configure_event_handlers();
+  var ctx = document.getElementById('canvas').getContext('2d');
+  var towers = new Towers(ctx);
+  var mover = new DiskMover(ctx, towers);
 }
 window.addEventListener('load', init, false);
 
@@ -12,51 +13,77 @@ function debug(message) {
   document.getElementById('debug').innerHTML += '<p>' + message + '</p>';
 }
 
-function clear_canvas(ctx) {
-  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-}
-
 
 //===============
 // Event handling
 //===============
-function configure_event_handlers() {
-  document.getElementById('canvas').addEventListener('click', on_canvas_click, false);
+function DiskMover(ctx, towers) {
+  this.ctx = ctx;
+  this.towers = towers;
+  this.canvas = ctx.canvas;
+  this.coordinate_finder = new ElementCoordinateFinder(this.canvas);
+  this.configure_event_handlers();
 }
 
-function on_canvas_click(evt) {
-  var canvas = document.getElementById('canvas');
-  var canvas_x = evt.pageX - get_offset_x(canvas);
-  var canvas_y = evt.pageY - get_offset_y(canvas);
-
-  canvas.getContext('2d').fillRect(canvas_x, canvas_y, 1, 1);
-
-  var disk = blah[0].disks[0];
-  if(canvas_x >= disk.x &&
-     canvas_x < disk.x + disk.width &&
-     canvas_y >= disk.y &&
-     canvas_y < disk.y + disk.height) {
-    debug('Disk clicked');
-  } else {
-    debug('Disk not clicked');
-  }
+DiskMover.prototype.configure_event_handlers = function() {
+  // Must use 'self', for when event handler is called, 'this' will refer not to the DiskMover instance I expect,
+  // but to the element on which the event occurred -- in this case, the canvas element.
+  var self = this;
+  this.canvas.addEventListener('mousedown', function(event) { self.on_canvas_mousedown(event); }, false);
+  this.canvas.addEventListener('mousemove', function(event) { self.on_canvas_mousemove(event); }, false);
+  this.canvas.addEventListener('mouseup',   function(event) { self.on_canvas_mouseup(event); },   false);
 }
 
-function get_offset(node, type) {
+DiskMover.prototype.on_canvas_mousedown = function(event) {
+  var coords = this.coordinate_finder.get_mouse_coordinates(event);
+  this.disk = this.towers.get_clicked_disk(coords.x, coords.y);
+  if(!this.disk) return;
+
+  this.dx = coords.x - this.disk.x;
+  this.dy = coords.y - this.disk.y;
+  this.dragging = true;
+}
+
+DiskMover.prototype.on_canvas_mousemove = function(event) {
+  if(!this.dragging) return;
+  var coords = this.coordinate_finder.get_mouse_coordinates(event);
+  this.disk.x = coords.x - this.dx;
+  this.disk.y = coords.y - this.dy;
+  this.towers.draw();
+}
+
+DiskMover.prototype.on_canvas_mouseup = function(event) {
+  this.dragging = false;
+}
+
+
+//========================
+// ElementCoordinateFinder
+//========================
+function ElementCoordinateFinder(element) {
+  this.element = element;
+}
+
+ElementCoordinateFinder.prototype.get_mouse_coordinates = function(event) {
+  return {'x': event.pageX - this.get_offset_x(),
+          'y': event.pageY - this.get_offset_y()};
+}
+
+ElementCoordinateFinder.prototype.get_offset = function(type) {
   var offset_property = (type == 'x' ? 'offsetLeft' : 'offsetTop');
-  var result = node[offset_property];
-  for(var parent = node; parent = parent.offSetParent; parent != null) {
+  var result = this.element[offset_property];
+  for(var parent = this.element; parent = parent.offSetParent; parent != null) {
     result += parent[offset_property];
   }
   return result;
 }
 
-function get_offset_x(node) {
-  return get_offset(node, 'x');
+ElementCoordinateFinder.prototype.get_offset_x = function() {
+  return this.get_offset('x');
 }
 
-function get_offset_y(node) {
-  return get_offset(node, 'y');
+ElementCoordinateFinder.prototype.get_offset_y = function() {
+  return this.get_offset('y');
 }
 
 
@@ -67,7 +94,6 @@ function Towers(ctx) {
   this.count = 3;
   this.ctx = ctx;
   this.towers = [];
-  blah = this.towers; // TODO: eliminate use of global variable
 
   this.create();
   this.towers[0].add_disk(new Disk());
@@ -75,6 +101,7 @@ function Towers(ctx) {
 }
 
 Towers.prototype.draw = function() {
+  this.clear_canvas();
   for(i in this.towers) {
     this.towers[i].draw();
   }
@@ -87,6 +114,19 @@ Towers.prototype.create = function() {
     this.towers.push(tower);
     x += (11/10)*tower.base.width;
   }
+}
+
+Towers.prototype.get_clicked_disk = function(x, y) {
+  for(i in this.towers) {
+    var disks = this.towers[i].disks;
+    for(j in disks) {
+      if(disks[j].clicked_on(x, y)) return disks[j];
+    }
+  }
+}
+
+Towers.prototype.clear_canvas = function() {
+  this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
 }
 
 
@@ -119,11 +159,15 @@ Tower.prototype.draw = function() {
 }
 
 Tower.prototype.draw_self = function() {
+  this.ctx.save();
+  // Draw towers behind existing content, such as the disks of other towers.
+  this.ctx.globalCompositeOperation = 'destination-over';
   this.ctx.beginPath();
   this.ctx.rect(this.base.x, this.base.y, this.base.width, this.base.height);
   this.ctx.rect(this.stem.x, this.stem.y, this.stem.width, this.stem.height);
   this.ctx.closePath();
   this.ctx.fill();
+  this.ctx.restore();
 }
 
 Tower.prototype.draw_disks = function() {
@@ -159,4 +203,11 @@ Disk.prototype.draw = function() {
   this.tower.ctx.fillStyle = '#ffa500';
   this.tower.ctx.fill();
   this.tower.ctx.restore();
+}
+
+Disk.prototype.clicked_on = function(x, y) {
+  return x >= this.x              &&
+         x <  this.x + this.width &&
+         y >= this.y              &&
+         y <  this.y + this.height;
 }
