@@ -1,4 +1,5 @@
 function init() {
+  debug = new Debug(); // TODO: convert to singleton to eliminate global variable.
   var ctx = document.getElementById('canvas').getContext('2d');
   var towers = new Towers(ctx);
   var mover = new DiskMover(ctx, towers);
@@ -9,10 +10,6 @@ window.addEventListener('load', init, false);
 //===========
 // Miscellany
 //===========
-function debug(message) {
-  document.getElementById('debug').innerHTML += '<p>' + message + '</p>';
-}
-
 // Returns random integer in range [min, max].
 function random_int(min, max) {
   return Math.floor(Math.random() * (max - min + 1) + min);
@@ -29,6 +26,23 @@ function generate_random_colour() {
   return 'rgb(' + rgb.join() + ')';
 }
 
+
+//======
+// Debug
+//======
+function Debug() {
+  this.output = document.getElementById('debug');
+}
+
+Debug.prototype.msg = function(message) {
+  this.output.innerHTML += '<p>' + message + '</p>';
+}
+
+Debug.prototype.clear = function() {
+  this.output.innerHTML = '';
+}
+
+
 //===============
 // Event handling
 //===============
@@ -44,6 +58,7 @@ DiskMover.prototype.configure_event_handlers = function() {
   // Must use 'self', for when event handler is called, 'this' will refer not to the DiskMover instance I expect,
   // but to the element on which the event occurred -- in this case, the canvas element.
   var self = this;
+  // TODO: make clicked-on disk always draw on top of other disks.
   this.canvas.addEventListener('mousedown', function(event) { self.on_canvas_mousedown(event); }, false);
   this.canvas.addEventListener('mousemove', function(event) { self.on_canvas_mousemove(event); }, false);
   this.canvas.addEventListener('mouseup',   function(event) { self.on_canvas_mouseup(event); },   false);
@@ -62,15 +77,29 @@ DiskMover.prototype.on_canvas_mousedown = function(event) {
 DiskMover.prototype.on_canvas_mousemove = function(event) {
   if(!this.dragging) return;
   var coords = this.coordinate_finder.get_mouse_coordinates(event);
-  this.disk.x = coords.x - this.dx;
-  this.disk.y = coords.y - this.dy;
+  this.disk.move_to(coords.x - this.dx, coords.y - this.dy);
   this.towers.draw();
+
+  debug.clear();
+  debug.msg('Distance to tower 1: ' + this.disk.centre.distance_to(this.disk.tower.top));
 }
 
 DiskMover.prototype.on_canvas_mouseup = function(event) {
   this.dragging = false;
 }
 
+
+// =====
+// Point
+// =====
+function Point(x, y) {
+  this.x = x;
+  this.y = y;
+}
+
+Point.prototype.distance_to = function(other) {
+  return Math.sqrt(Math.pow(other.x - this.x, 2) + Math.pow(other.y - this.y, 2));
+}
 
 //========================
 // ElementCoordinateFinder
@@ -80,8 +109,7 @@ function ElementCoordinateFinder(element) {
 }
 
 ElementCoordinateFinder.prototype.get_mouse_coordinates = function(event) {
-  return {'x': event.pageX - this.get_offset_x(),
-          'y': event.pageY - this.get_offset_y()};
+  return new Point(event.pageX - this.get_offset_x(), event.pageY - this.get_offset_y());
 }
 
 ElementCoordinateFinder.prototype.get_offset = function(type) {
@@ -147,6 +175,9 @@ Towers.prototype.get_clicked_disk = function(x, y) {
   }
 }
 
+Towers.prototype.find_closest_tower = function(point) {
+}
+
 Towers.prototype.clear_canvas = function() {
   this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
 }
@@ -155,6 +186,7 @@ Towers.prototype.clear_canvas = function() {
 //=======
 // Tower
 //=======
+// TODO: refactor to use Point class throughout.
 function Tower(x, y, ctx) {
   this.x = x;
   this.y = y;
@@ -169,12 +201,13 @@ function Tower(x, y, ctx) {
   this.stem.x = this.x + (this.base.width/2 - this.stem.width/2);
   this.stem.y = this.y;
 
-  this.top = this.base.y;
+  this.top = new Point(this.stem.x + this.stem.width/2, this.stem.y);
+  this.disks_top = this.base.y;
 }
 
 Tower.prototype.add_disk = function(disk) {
   disk.set_tower(this);
-  this.top = disk.y;
+  this.disks_top = disk.y;
   this.disks.push(disk);
 }
 
@@ -205,6 +238,7 @@ Tower.prototype.draw_disks = function() {
 //=====
 // Disk
 //=====
+// TODO: refactor to use Point class throughout.
 function Disk(width, colour) {
   this.colour = colour;
   this.width = width;
@@ -213,8 +247,13 @@ function Disk(width, colour) {
 
 Disk.prototype.set_tower = function(tower) {
   this.tower = tower;
-  this.x = (this.tower.base.width - this.width)/2;
-  this.y = this.tower.top - this.height;
+  this.move_to( (this.tower.base.width - this.width)/2, this.tower.disks_top - this.height);
+}
+
+Disk.prototype.move_to = function(x, y) {
+  this.x = x;
+  this.y = y;
+  this.centre = new Point(this.x + this.width/2, this.y + this.height/2);
 }
 
 Disk.prototype.draw = function() {
