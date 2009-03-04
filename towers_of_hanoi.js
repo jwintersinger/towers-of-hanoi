@@ -67,7 +67,7 @@ DiskMover.prototype.configure_event_handlers = function() {
 DiskMover.prototype.on_canvas_mousedown = function(event) {
   var coords = this.coordinate_finder.get_mouse_coordinates(event);
   this.disk = this.towers.get_clicked_disk(coords.x, coords.y);
-  if(!this.disk) return;
+  if(!this.disk || !this.disk.is_top_disk()) return;
 
   this.dx = coords.x - this.disk.x;
   this.dy = coords.y - this.disk.y;
@@ -81,17 +81,23 @@ DiskMover.prototype.on_canvas_mousemove = function(event) {
   this.towers.draw();
 
   debug.clear();
-  debug.msg('Distance to tower 1: ' + this.disk.centre.distance_to(this.disk.tower.top));
+  debug.msg('Distance to tower 1: ' + this.disk.centre.distance_to(this.towers.towers[0].top));
+  debug.msg('Distance to tower 2: ' + this.disk.centre.distance_to(this.towers.towers[1].top));
+  debug.msg('Distance to tower 3: ' + this.disk.centre.distance_to(this.towers.towers[2].top));
 }
 
 DiskMover.prototype.on_canvas_mouseup = function(event) {
+  if(!this.dragging) return;
   this.dragging = false;
+  var closest_tower = this.towers.find_closest_tower(this.disk.centre);
+  this.disk.transfer_to_tower(closest_tower);
+  this.towers.draw();
 }
 
 
-// =====
+//======
 // Point
-// =====
+//======
 function Point(x, y) {
   this.x = x;
   this.y = y;
@@ -145,7 +151,7 @@ Towers.prototype.add_initial_disks = function() {
   var width = this.towers[0].base.width;
   for(var i = 0; i < this.disks_count; i++) {
     width -= 20;
-    this.towers[0].add_disk(new Disk(width, generate_random_colour() ));
+    new Disk(this.towers[0], width, generate_random_colour());
   }
 }
 
@@ -176,6 +182,18 @@ Towers.prototype.get_clicked_disk = function(x, y) {
 }
 
 Towers.prototype.find_closest_tower = function(point) {
+  // TODO: refactor to eliminate duplication
+  var closest_tower = this.towers[0];
+  var closest_distance = this.towers[0].top.distance_to(point);
+
+  for(var i = 1; i < this.towers.length; i++) {
+    var distance = this.towers[i].top.distance_to(point);
+    if(distance < closest_distance) {
+      closest_tower = this.towers[i];
+      closest_distance = distance;
+    }
+  }
+  return closest_tower;
 }
 
 Towers.prototype.clear_canvas = function() {
@@ -187,6 +205,7 @@ Towers.prototype.clear_canvas = function() {
 // Tower
 //=======
 // TODO: refactor to use Point class throughout.
+// TODO: remove index parameter in constructor and from class
 function Tower(x, y, ctx) {
   this.x = x;
   this.y = y;
@@ -205,10 +224,18 @@ function Tower(x, y, ctx) {
   this.disks_top = this.base.y;
 }
 
+Tower.prototype.toString = function() {
+  return 'Tower(x=' + this.x + ', y=' + this.y + ')';
+}
+
 Tower.prototype.add_disk = function(disk) {
-  disk.set_tower(this);
-  this.disks_top = disk.y;
   this.disks.push(disk);
+  this.disks_top -= disk.height;
+}
+
+Tower.prototype.remove_disk = function(disk) {
+  this.disks.splice(this.disks.indexOf(disk), 1);
+  this.disks_top += disk.height;
 }
 
 Tower.prototype.draw = function() {
@@ -234,26 +261,39 @@ Tower.prototype.draw_disks = function() {
   }
 }
 
+Tower.prototype.get_top_disk = function() {
+  return this.disks[this.disks.length - 1];
+}
+
 
 //=====
 // Disk
 //=====
 // TODO: refactor to use Point class throughout.
-function Disk(width, colour) {
+function Disk(tower, width, colour) {
   this.colour = colour;
   this.width = width;
   this.height = 15;
-}
-
-Disk.prototype.set_tower = function(tower) {
-  this.tower = tower;
-  this.move_to( (this.tower.base.width - this.width)/2, this.tower.disks_top - this.height);
+  this.transfer_to_tower(tower);
 }
 
 Disk.prototype.move_to = function(x, y) {
   this.x = x;
   this.y = y;
   this.centre = new Point(this.x + this.width/2, this.y + this.height/2);
+}
+
+Disk.prototype.transfer_to_tower = function(destination) {
+  var top_disk = destination.get_top_disk();
+  // Do not permit disks wider than tower's existing top disk to transfer to that
+  // tower -- in such a case, move the disk back to its original tower.
+  if(top_disk && top_disk.width < this.width) destination = this.tower;;
+
+  if(this.tower) this.tower.remove_disk(this);
+  this.move_to(destination.x + (destination.base.width - this.width)/2,
+               destination.y + (destination.disks_top - this.height));
+  destination.add_disk(this);
+  this.tower = destination;
 }
 
 Disk.prototype.draw = function() {
@@ -272,4 +312,12 @@ Disk.prototype.clicked_on = function(x, y) {
          x <  this.x + this.width &&
          y >= this.y              &&
          y <  this.y + this.height;
+}
+
+Disk.prototype.is_top_disk = function() {
+  return this == this.tower.get_top_disk();
+}
+
+Disk.prototype.toString = function() {
+  return 'Disk(width=' + this.width + ', colour=' + this.colour + ')'
 }
