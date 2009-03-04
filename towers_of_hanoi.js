@@ -2,7 +2,8 @@ function init() {
   debug = new Debug(); // TODO: convert to singleton to eliminate global variable.
   var ctx = document.getElementById('canvas').getContext('2d');
   var tower_manager = new TowerManager(ctx);
-  var mover = new DiskMover(ctx, tower_manager);
+  var game_state = new GameState(tower_manager);
+  var mover = new DiskMover(ctx, tower_manager, game_state);
 }
 window.addEventListener('load', init, false);
 
@@ -46,9 +47,10 @@ Debug.prototype.clear = function() {
 //===============
 // Event handling
 //===============
-function DiskMover(ctx, tower_manager) {
+function DiskMover(ctx, tower_manager, game_state) {
   this.ctx = ctx;
   this.tower_manager = tower_manager;
+  this.game_state = game_state;
   this.canvas = ctx.canvas;
   this.coordinate_finder = new ElementCoordinateFinder(this.canvas);
   this.configure_event_handlers();
@@ -173,12 +175,16 @@ TowerManager.prototype.create_towers = function() {
 }
 
 TowerManager.prototype.get_clicked_disk = function(x, y) {
-  for(i in this.towers) {
-    var disks = this.towers[i].disks;
-    for(j in disks) {
-      if(disks[j].clicked_on(x, y)) return disks[j];
-    }
+  var disks = this.get_all_disks();
+  for(i in disks) {
+    if(disks[i].is_clicked_on(x, y)) return disks[i];
   }
+}
+
+TowerManager.prototype.get_all_disks = function() {
+  var disks = [];
+  for(i in this.towers) disks = disks.concat(this.towers[i].disks);
+  return disks;
 }
 
 TowerManager.prototype.find_closest_tower = function(point) {
@@ -198,6 +204,43 @@ TowerManager.prototype.find_closest_tower = function(point) {
 
 TowerManager.prototype.clear_canvas = function() {
   this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+}
+
+TowerManager.prototype.toString = function() {
+  return 'TowerManager( ' + this.towers + ' )';
+}
+
+//==========
+// GameState
+//==========
+function GameState(tower_manager) {
+  this.tower_manager = tower_manager;
+  this.last_complete_tower = this.tower_manager.towers[0];
+  this.connect_to_disks();
+}
+
+GameState.prototype.on_disk_transferred = function() {
+  var towers = this.tower_manager.towers;
+  for(var i in towers) {
+    if(towers[i].disks.length == this.count_total_disks() &&
+       towers[i] != this.last_complete_tower) {
+      debug.msg('Victory!');
+    }
+  }
+}
+
+GameState.prototype.count_total_disks = function() {
+  return this.tower_manager.get_all_disks().length;
+}
+
+GameState.prototype.connect_to_disks = function() {
+  var disks = this.tower_manager.get_all_disks();
+  var self = this;
+  for(var i in disks) {
+    // Must use closure and 'self' -- only in so doing do we have access to GameState object.
+    // 'this' refers to the object that calls the method -- in this case, the Disk object.
+    disks[i].on_disk_transferred = function() { self.on_disk_transferred(); }
+  }
 }
 
 
@@ -256,9 +299,8 @@ Tower.prototype.draw_self = function() {
 }
 
 Tower.prototype.draw_disks = function() {
-  for(var i = 0; i < this.disks.length; i++) {
+  for(i in this.disks)
     this.disks[i].draw();
-  }
 }
 
 Tower.prototype.get_top_disk = function() {
@@ -294,6 +336,8 @@ Disk.prototype.transfer_to_tower = function(destination) {
                destination.y + (destination.disks_top - this.height));
   destination.add_disk(this);
   this.tower = destination;
+
+  if(this.on_disk_transferred) this.on_disk_transferred(this);
 }
 
 Disk.prototype.draw = function() {
@@ -307,7 +351,7 @@ Disk.prototype.draw = function() {
   this.tower.ctx.restore();
 }
 
-Disk.prototype.clicked_on = function(x, y) {
+Disk.prototype.is_clicked_on = function(x, y) {
   return x >= this.x              &&
          x <  this.x + this.width &&
          y >= this.y              &&
