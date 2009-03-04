@@ -1,8 +1,8 @@
 function init() {
   debug = new Debug(); // TODO: convert to singleton to eliminate global variable.
   var ctx = document.getElementById('canvas').getContext('2d');
-  var towers = new Towers(ctx);
-  var mover = new DiskMover(ctx, towers);
+  var tower_manager = new TowerManager(ctx);
+  var mover = new DiskMover(ctx, tower_manager);
 }
 window.addEventListener('load', init, false);
 
@@ -46,9 +46,9 @@ Debug.prototype.clear = function() {
 //===============
 // Event handling
 //===============
-function DiskMover(ctx, towers) {
+function DiskMover(ctx, tower_manager) {
   this.ctx = ctx;
-  this.towers = towers;
+  this.tower_manager = tower_manager;
   this.canvas = ctx.canvas;
   this.coordinate_finder = new ElementCoordinateFinder(this.canvas);
   this.configure_event_handlers();
@@ -66,7 +66,7 @@ DiskMover.prototype.configure_event_handlers = function() {
 
 DiskMover.prototype.on_canvas_mousedown = function(event) {
   var coords = this.coordinate_finder.get_mouse_coordinates(event);
-  this.disk = this.towers.get_clicked_disk(coords.x, coords.y);
+  this.disk = this.tower_manager.get_clicked_disk(coords.x, coords.y);
   if(!this.disk || !this.disk.is_top_disk()) return;
 
   this.dx = coords.x - this.disk.x;
@@ -78,20 +78,20 @@ DiskMover.prototype.on_canvas_mousemove = function(event) {
   if(!this.dragging) return;
   var coords = this.coordinate_finder.get_mouse_coordinates(event);
   this.disk.move_to(coords.x - this.dx, coords.y - this.dy);
-  this.towers.draw();
+  this.tower_manager.draw();
 
   debug.clear();
-  debug.msg('Distance to tower 1: ' + this.disk.centre.distance_to(this.towers.towers[0].top));
-  debug.msg('Distance to tower 2: ' + this.disk.centre.distance_to(this.towers.towers[1].top));
-  debug.msg('Distance to tower 3: ' + this.disk.centre.distance_to(this.towers.towers[2].top));
+  debug.msg('Distance to tower 1: ' + this.disk.centre.distance_to(this.tower_manager.towers[0].top));
+  debug.msg('Distance to tower 2: ' + this.disk.centre.distance_to(this.tower_manager.towers[1].top));
+  debug.msg('Distance to tower 3: ' + this.disk.centre.distance_to(this.tower_manager.towers[2].top));
 }
 
 DiskMover.prototype.on_canvas_mouseup = function(event) {
   if(!this.dragging) return;
   this.dragging = false;
-  var closest_tower = this.towers.find_closest_tower(this.disk.centre);
+  var closest_tower = this.tower_manager.find_closest_tower(this.disk.centre);
   this.disk.transfer_to_tower(closest_tower);
-  this.towers.draw();
+  this.tower_manager.draw();
 }
 
 
@@ -136,10 +136,10 @@ ElementCoordinateFinder.prototype.get_offset_y = function() {
 }
 
 
-//=======
-// Towers
-//=======
-function Towers(ctx) {
+//=============
+// TowerManager
+//=============
+function TowerManager(ctx) {
   this.ctx = ctx;
   this.towers_count = this.disks_count = 3;
   this.create_towers();
@@ -147,7 +147,7 @@ function Towers(ctx) {
   this.draw();
 }
 
-Towers.prototype.add_initial_disks = function() {
+TowerManager.prototype.add_initial_disks = function() {
   var width = this.towers[0].base.width;
   for(var i = 0; i < this.disks_count; i++) {
     width -= 20;
@@ -155,14 +155,14 @@ Towers.prototype.add_initial_disks = function() {
   }
 }
 
-Towers.prototype.draw = function() {
+TowerManager.prototype.draw = function() {
   this.clear_canvas();
   for(i in this.towers) {
     this.towers[i].draw();
   }
 }
 
-Towers.prototype.create_towers = function() {
+TowerManager.prototype.create_towers = function() {
   this.towers = [];
   var x = 0;
   for(var i = 0; i < this.towers_count; i++) {
@@ -172,7 +172,7 @@ Towers.prototype.create_towers = function() {
   }
 }
 
-Towers.prototype.get_clicked_disk = function(x, y) {
+TowerManager.prototype.get_clicked_disk = function(x, y) {
   for(i in this.towers) {
     var disks = this.towers[i].disks;
     for(j in disks) {
@@ -181,7 +181,7 @@ Towers.prototype.get_clicked_disk = function(x, y) {
   }
 }
 
-Towers.prototype.find_closest_tower = function(point) {
+TowerManager.prototype.find_closest_tower = function(point) {
   // TODO: refactor to eliminate duplication
   var closest_tower = this.towers[0];
   var closest_distance = this.towers[0].top.distance_to(point);
@@ -196,7 +196,7 @@ Towers.prototype.find_closest_tower = function(point) {
   return closest_tower;
 }
 
-Towers.prototype.clear_canvas = function() {
+TowerManager.prototype.clear_canvas = function() {
   this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
 }
 
