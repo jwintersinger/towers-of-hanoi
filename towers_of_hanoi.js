@@ -3,7 +3,7 @@ function init() {
   var ctx = document.getElementById('canvas').getContext('2d');
   var tower_manager = new TowerManager(ctx);
   var game_state = new GameState(tower_manager);
-  var mover = new DiskMover(ctx, tower_manager, game_state);
+  new InputHandler(ctx, tower_manager, game_state);
 }
 window.addEventListener('load', init, false);
 
@@ -47,7 +47,7 @@ Debug.prototype.clear = function() {
 //===============
 // Event handling
 //===============
-function DiskMover(ctx, tower_manager, game_state) {
+function InputHandler(ctx, tower_manager, game_state) {
   this.ctx = ctx;
   this.tower_manager = tower_manager;
   this.game_state = game_state;
@@ -56,8 +56,8 @@ function DiskMover(ctx, tower_manager, game_state) {
   this.configure_event_handlers();
 }
 
-DiskMover.prototype.configure_event_handlers = function() {
-  // Must use 'self', for when event handler is called, 'this' will refer not to the DiskMover instance I expect,
+InputHandler.prototype.configure_event_handlers = function() {
+  // Must use 'self', for when event handler is called, 'this' will refer not to the InputHandler instance I expect,
   // but to the element on which the event occurred -- in this case, the canvas element.
   var self = this;
   // TODO: make clicked-on disk always draw on top of other disks.
@@ -66,7 +66,7 @@ DiskMover.prototype.configure_event_handlers = function() {
   this.canvas.addEventListener('mouseup',   function(event) { self.on_canvas_mouseup(event); },   false);
 }
 
-DiskMover.prototype.on_canvas_mousedown = function(event) {
+InputHandler.prototype.on_canvas_mousedown = function(event) {
   var coords = this.coordinate_finder.get_mouse_coordinates(event);
   this.disk = this.tower_manager.get_clicked_disk(coords.x, coords.y);
   if(!this.disk || !this.disk.is_top_disk()) return;
@@ -76,7 +76,7 @@ DiskMover.prototype.on_canvas_mousedown = function(event) {
   this.dragging = true;
 }
 
-DiskMover.prototype.on_canvas_mousemove = function(event) {
+InputHandler.prototype.on_canvas_mousemove = function(event) {
   if(!this.dragging) return;
   var coords = this.coordinate_finder.get_mouse_coordinates(event);
   this.disk.move_to(coords.x - this.dx, coords.y - this.dy);
@@ -88,7 +88,7 @@ DiskMover.prototype.on_canvas_mousemove = function(event) {
   //debug.msg('Distance to tower 3: ' + this.disk.centre.distance_to(this.tower_manager.towers[2].top));
 }
 
-DiskMover.prototype.on_canvas_mouseup = function(event) {
+InputHandler.prototype.on_canvas_mouseup = function(event) {
   if(!this.dragging) return;
   this.dragging = false;
   var closest_tower = this.tower_manager.find_closest_tower(this.disk.centre);
