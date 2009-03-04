@@ -82,10 +82,10 @@ DiskMover.prototype.on_canvas_mousemove = function(event) {
   this.disk.move_to(coords.x - this.dx, coords.y - this.dy);
   this.tower_manager.draw();
 
-  debug.clear();
-  debug.msg('Distance to tower 1: ' + this.disk.centre.distance_to(this.tower_manager.towers[0].top));
-  debug.msg('Distance to tower 2: ' + this.disk.centre.distance_to(this.tower_manager.towers[1].top));
-  debug.msg('Distance to tower 3: ' + this.disk.centre.distance_to(this.tower_manager.towers[2].top));
+  //debug.clear();
+  //debug.msg('Distance to tower 1: ' + this.disk.centre.distance_to(this.tower_manager.towers[0].top));
+  //debug.msg('Distance to tower 2: ' + this.disk.centre.distance_to(this.tower_manager.towers[1].top));
+  //debug.msg('Distance to tower 3: ' + this.disk.centre.distance_to(this.tower_manager.towers[2].top));
 }
 
 DiskMover.prototype.on_canvas_mouseup = function(event) {
@@ -143,7 +143,8 @@ ElementCoordinateFinder.prototype.get_offset_y = function() {
 //=============
 function TowerManager(ctx) {
   this.ctx = ctx;
-  this.towers_count = this.disks_count = 3;
+  this.towers_count = 3;
+  this.disks_count = 2;
   this.create_towers();
   this.add_initial_disks();
   this.draw();
@@ -215,17 +216,22 @@ TowerManager.prototype.toString = function() {
 //==========
 function GameState(tower_manager) {
   this.tower_manager = tower_manager;
-  this.last_complete_tower = this.tower_manager.towers[0];
   this.connect_to_disks();
+  this.last_complete_tower = this.find_complete_tower();
 }
 
 GameState.prototype.on_disk_transferred = function() {
+  var complete_tower = this.find_complete_tower();
+  if(complete_tower && complete_tower != this.last_complete_tower) {
+    this.last_complete_tower = complete_tower;
+    debug.msg('Victory!');
+  }
+}
+
+GameState.prototype.find_complete_tower = function() {
   var towers = this.tower_manager.towers;
   for(var i in towers) {
-    if(towers[i].disks.length == this.count_total_disks() &&
-       towers[i] != this.last_complete_tower) {
-      debug.msg('Victory!');
-    }
+    if(towers[i].disks.length == this.count_total_disks()) return towers[i];
   }
 }
 
