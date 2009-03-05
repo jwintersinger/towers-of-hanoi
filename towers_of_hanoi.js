@@ -98,18 +98,17 @@ InputHandler.prototype.add_event_listeners = function() {
 InputHandler.prototype.on_canvas_mousedown = function(event) {
   if(!this.allow_input) return;
   var coords = this.coordinate_finder.get_mouse_coordinates(event);
-  this.disk = this.tower_manager.get_clicked_disk(coords.x, coords.y);
+  this.disk = this.tower_manager.get_clicked_disk(coords);
   if(!this.disk || !this.disk.is_top_disk()) return;
 
-  this.dx = coords.x - this.disk.x;
-  this.dy = coords.y - this.disk.y;
+  this.mouse_delta = coords.subtract(this.disk.position);
   this.dragging = true;
 }
 
 InputHandler.prototype.on_canvas_mousemove = function(event) {
   if(!this.dragging) return;
   var coords = this.coordinate_finder.get_mouse_coordinates(event);
-  this.disk.move_to(coords.x - this.dx, coords.y - this.dy);
+  this.disk.move_to(coords.subtract(this.mouse_delta));
   this.tower_manager.draw();
   this.show_distance_to_each_tower();
 }
@@ -176,8 +175,18 @@ function Point(x, y) {
   this.y = y;
 }
 
+// Does not operate in-place -- returns new Point.
+// I'd like to implement it as an operator, but no operator overloading until Javascript 2, alas.
+Point.prototype.subtract = function(point) {
+  return new Point(this.x - point.x, this.y - point.y);
+}
+
 Point.prototype.distance_to = function(other) {
   return Math.sqrt(Math.pow(other.x - this.x, 2) + Math.pow(other.y - this.y, 2));
+}
+
+Point.prototype.toString = function() {
+  return '(' + this.x + ', ' + this.y + ')';
 }
 
 //========================
@@ -239,16 +248,16 @@ TowerManager.prototype.create_towers = function() {
   this.towers = [];
   var x = 0;
   for(var i = 0; i < this.towers_count; i++) {
-    var tower = new Tower(x, 0, this.ctx);
+    var tower = new Tower(new Point(x, 0), this.ctx);
     this.towers.push(tower);
     x += (11/10)*tower.base.width;
   }
 }
 
-TowerManager.prototype.get_clicked_disk = function(x, y) {
+TowerManager.prototype.get_clicked_disk = function(point) {
   var disks = this.get_all_disks();
   for(i in disks) {
-    if(disks[i].is_clicked_on(x, y)) return disks[i];
+    if(disks[i].is_clicked_on(point)) return disks[i];
   }
 }
 
@@ -336,27 +345,22 @@ VictoryCelebrator.prototype.on_victory = function() {
 //=======
 // Tower
 //=======
-// TODO: refactor to use Point class throughout.
-function Tower(x, y, ctx) {
-  this.x = x;
-  this.y = y;
+function Tower(position, ctx) {
+  this.position = position;
   this.ctx = ctx;
   this.disks = [];
 
   this.base = {'width': 160, 'height': 20};
   this.stem = {'width': 20, 'height': 100};
+  this.base.position = new Point(this.position.x, this.position.y + this.stem.height);
+  this.stem.position = new Point(this.position.x + (this.base.width/2 - this.stem.width/2), this.position.y);
 
-  this.base.x = this.x;
-  this.base.y = this.y + this.stem.height;
-  this.stem.x = this.x + (this.base.width/2 - this.stem.width/2);
-  this.stem.y = this.y;
-
-  this.top = new Point(this.stem.x + this.stem.width/2, this.stem.y);
-  this.disks_top = this.base.y;
+  this.top = new Point(this.stem.position.x + this.stem.width/2, this.stem.position.y);
+  this.disks_top = this.base.position.y;
 }
 
 Tower.prototype.toString = function() {
-  return 'Tower(x=' + this.x + ', y=' + this.y + ')';
+  return 'Tower(x=' + this.position.x + ', y=' + this.position.y + ')';
 }
 
 Tower.prototype.add_disk = function(disk) {
@@ -379,8 +383,8 @@ Tower.prototype.draw_self = function() {
   // Draw towers behind existing content, such as the disks of other towers.
   this.ctx.globalCompositeOperation = 'destination-over';
   this.ctx.beginPath();
-  this.ctx.rect(this.base.x, this.base.y, this.base.width, this.base.height);
-  this.ctx.rect(this.stem.x, this.stem.y, this.stem.width, this.stem.height);
+  this.ctx.rect(this.base.position.x, this.base.position.y, this.base.width, this.base.height);
+  this.ctx.rect(this.stem.position.x, this.stem.position.y, this.stem.width, this.stem.height);
   this.ctx.closePath();
   this.ctx.fill();
   this.ctx.restore();
@@ -399,7 +403,6 @@ Tower.prototype.get_top_disk = function() {
 //=====
 // Disk
 //=====
-// TODO: refactor to use Point class throughout.
 function Disk(tower, width, colour) {
   this.colour = colour;
   this.width = width;
@@ -407,10 +410,9 @@ function Disk(tower, width, colour) {
   this.transfer_to_tower(tower);
 }
 
-Disk.prototype.move_to = function(x, y) {
-  this.x = x;
-  this.y = y;
-  this.centre = new Point(this.x + this.width/2, this.y + this.height/2);
+Disk.prototype.move_to = function(point) {
+  this.position = point;
+  this.centre = new Point(this.position.x + this.width/2, this.position.y + this.height/2);
 }
 
 Disk.prototype.transfer_to_tower = function(destination) {
@@ -420,8 +422,8 @@ Disk.prototype.transfer_to_tower = function(destination) {
   if(top_disk && top_disk.width < this.width) destination = this.tower;;
 
   if(this.tower) this.tower.remove_disk(this);
-  this.move_to(destination.x + (destination.base.width - this.width)/2,
-               destination.y + (destination.disks_top - this.height));
+  this.move_to(new Point(destination.position.x + (destination.base.width - this.width)/2,
+                         destination.position.y + (destination.disks_top - this.height)));
   destination.add_disk(this);
   this.tower = destination;
 
@@ -430,7 +432,7 @@ Disk.prototype.transfer_to_tower = function(destination) {
 
 Disk.prototype.draw = function() {
   this.tower.ctx.beginPath();
-  this.tower.ctx.rect(this.x, this.y, this.width, this.height);
+  this.tower.ctx.rect(this.position.x, this.position.y, this.width, this.height);
   this.tower.ctx.closePath();
 
   this.tower.ctx.save();
@@ -439,11 +441,11 @@ Disk.prototype.draw = function() {
   this.tower.ctx.restore();
 }
 
-Disk.prototype.is_clicked_on = function(x, y) {
-  return x >= this.x              &&
-         x <  this.x + this.width &&
-         y >= this.y              &&
-         y <  this.y + this.height;
+Disk.prototype.is_clicked_on = function(point) {
+  return point.x >= this.position.x              &&
+         point.x <  this.position.x + this.width &&
+         point.y >= this.position.y              &&
+         point.y <  this.position.y + this.height;
 }
 
 Disk.prototype.is_top_disk = function() {
