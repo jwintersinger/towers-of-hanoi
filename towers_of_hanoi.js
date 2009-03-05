@@ -135,13 +135,15 @@ InputHandler.prototype.on_canvas_mouseup = function(event) {
   //     associated disks are created, and the canvas is redrawn to show the new towers & disks.
   //   * When Game's constructor exits, having initialized the new game, the call stack unwinds. Execution returns to
   //     the end of VictoryCelebrator.on_victory, then the end of GameState.on_disk_transferred, then the end of
-  //     Disk.transfer_to_tower, then the end of InputHandler.on_canvas_mouseup -- that's here! With the call above to
-  //     Disk.transfer_to_tower having completed, the line below is executed.
+  //     Disk.transfer_to_tower, then the end of InputHandler.on_canvas_mouseup -- that's here! (Call stack also
+  //     unwinds through anonymous closures wrapping calls to VictoryCelebrator.on_victory and
+  //     GameState.on_disk_transferred, but we don't count those.) With the call above to Disk.transfer_to_tower having
+  //     completed, the line below is executed.
   //
-  // The problem is that this.tower_manager refers to the *old* TowerManager, with the old towers and the old disks,
-  // but the same canvas element as is used in the new game. Thus, the canvas is overwritten with the old towers and
-  // disks. To see the proper game state, the player must then click on the invisible new disk located on the first
-  // tower -- doing so will force a redraw, showing the proper game state.
+  // The problem below is that this.tower_manager refers to the *old* TowerManager, with the old towers and the old
+  // disks, but the same canvas element as is used in the new game. Thus, the canvas is overwritten with the old towers
+  // and disks. To see the proper game state, the player must then click on the invisible new disk located on the
+  // first tower -- doing so will force a redraw, showing the proper game state.
   //
   // I see no obvious way to correct this at this location, for the call to this.tower_manager.draw must come after the
   // disk being dragged by the player has been moved to its new tower. Instead, in Game's initialization code, I shall
@@ -278,6 +280,7 @@ TowerManager.prototype.find_closest_tower = function(point) {
 }
 
 
+// This method might be more comfortable in another class -- its purpose is somewhat orthogonal to TowerManager's.
 TowerManager.prototype.clear_canvas = function() {
   this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
 }
