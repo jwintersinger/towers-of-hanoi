@@ -1,22 +1,8 @@
 function init() {
   debug = new Debug(); // TODO: convert to singleton to eliminate global variable.
-  start_new_game();
+  new Game();
 }
 window.addEventListener('load', init, false);
-
-function start_new_game() {
-  debug.msg('New game');
-
-  var ctx = document.getElementById('canvas').getContext('2d');
-  var tower_manager = new TowerManager(ctx);
-  var input_handler = new InputHandler(ctx, tower_manager);
-  var game_state = new GameState(tower_manager, input_handler);
-  var victory_celebrator = new VictoryCelebrator(input_handler);
-  game_state.on_victory = function() { victory_celebrator.on_victory(); }
-
-  tower_manager.draw();
-}
-
 
 //===========
 // Miscellany
@@ -35,6 +21,27 @@ function generate_random_colour() {
   var rgb = [random_int(0, 127), random_int(64, 192), random_int(128, 255)];
   shuffle(rgb);
   return 'rgb(' + rgb.join() + ')';
+}
+
+
+//=====
+// Game
+//=====
+function Game() {
+  this.start_new();
+}
+
+Game.prototype.start_new = function() {
+  debug.msg('New game');
+
+  var ctx = document.getElementById('canvas').getContext('2d');
+  var tower_manager = new TowerManager(ctx);
+  var input_handler = new InputHandler(ctx, tower_manager);
+  var game_state = new GameState(tower_manager, input_handler);
+  var victory_celebrator = new VictoryCelebrator(input_handler);
+  game_state.on_victory = function() { victory_celebrator.on_victory(); }
+
+  tower_manager.draw();
 }
 
 
