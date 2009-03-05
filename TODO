@@ -1,0 +1,12 @@
+Split Javascript into separate files
+  Implement build system to create production copy
+Improve random colour generation -- perhaps generate as HSV instead, which would give more predictable Vs
+Add better victory behaviour
+  Dim screen, put message ahead of it, provide option to play again
+  "Victory! \n\n You just ended the world [link to Wikipedia article]. Way to go, you jerk. Would you like to play again?"
+Provide explanation of game, its objectives, link to Wikipedia article
+Provide means of choosing number of disks
+Track high scores of user through cookies -- maybe store JSON in cookie
+Implement animation of disk onto tower
+Add AI solver
+Inform user of number of moves he took, minimum number of moves, percentage delta
