@@ -1,11 +1,21 @@
 function init() {
   debug = new Debug(); // TODO: convert to singleton to eliminate global variable.
-  var ctx = document.getElementById('canvas').getContext('2d');
-  var tower_manager = new TowerManager(ctx);
-  var game_state = new GameState(tower_manager);
-  new InputHandler(ctx, tower_manager, game_state);
+  start_new_game();
 }
 window.addEventListener('load', init, false);
+
+function start_new_game() {
+  debug.msg('New game');
+
+  var ctx = document.getElementById('canvas').getContext('2d');
+  var tower_manager = new TowerManager(ctx);
+  var input_handler = new InputHandler(ctx, tower_manager);
+  var game_state = new GameState(tower_manager, input_handler);
+  var victory_celebrator = new VictoryCelebrator(input_handler);
+  game_state.on_victory = function() { victory_celebrator.on_victory(); }
+
+  tower_manager.draw();
+}
 
 
 //===========
@@ -44,19 +54,20 @@ Debug.prototype.clear = function() {
 }
 
 
-//===============
-// Event handling
-//===============
-function InputHandler(ctx, tower_manager, game_state) {
+//=============
+// InputHandler
+//=============
+function InputHandler(ctx, tower_manager) {
   this.ctx = ctx;
   this.tower_manager = tower_manager;
-  this.game_state = game_state;
   this.canvas = ctx.canvas;
   this.coordinate_finder = new ElementCoordinateFinder(this.canvas);
-  this.configure_event_handlers();
+  this.add_event_handlers();
+  this.enable_input();
 }
 
-InputHandler.prototype.configure_event_handlers = function() {
+InputHandler.prototype.add_event_handlers = function() {
+  debug.msg('Adding event listeners');
   // Must use 'self', for when event handler is called, 'this' will refer not to the InputHandler instance I expect,
   // but to the element on which the event occurred -- in this case, the canvas element.
   var self = this;
@@ -67,6 +78,7 @@ InputHandler.prototype.configure_event_handlers = function() {
 }
 
 InputHandler.prototype.on_canvas_mousedown = function(event) {
+  if(!this.allow_input) return;
   var coords = this.coordinate_finder.get_mouse_coordinates(event);
   this.disk = this.tower_manager.get_clicked_disk(coords.x, coords.y);
   if(!this.disk || !this.disk.is_top_disk()) return;
@@ -94,6 +106,16 @@ InputHandler.prototype.on_canvas_mouseup = function(event) {
   var closest_tower = this.tower_manager.find_closest_tower(this.disk.centre);
   this.disk.transfer_to_tower(closest_tower);
   this.tower_manager.draw();
+}
+
+InputHandler.prototype.disable_input = function() {
+  debug.msg('Input disabled');
+  this.allow_input = false;
+}
+
+InputHandler.prototype.enable_input = function() {
+  debug.msg('Input enabled');
+  this.allow_input = true;
 }
 
 
@@ -147,7 +169,6 @@ function TowerManager(ctx) {
   this.disks_count = 2;
   this.create_towers();
   this.add_initial_disks();
-  this.draw();
 }
 
 TowerManager.prototype.add_initial_disks = function() {
@@ -224,7 +245,7 @@ GameState.prototype.on_disk_transferred = function() {
   var complete_tower = this.find_complete_tower();
   if(complete_tower && complete_tower != this.last_complete_tower) {
     this.last_complete_tower = complete_tower;
-    debug.msg('Victory!');
+    this.on_victory();
   }
 }
 
@@ -247,6 +268,22 @@ GameState.prototype.connect_to_disks = function() {
     // 'this' refers to the object that calls the method -- in this case, the Disk object.
     disks[i].on_disk_transferred = function() { self.on_disk_transferred(); }
   }
+}
+
+// Called when player is victorious. External agents may override this property to implement victory behaviour.
+GameState.prototype.on_victory = function() { }
+
+
+//==================
+// VictoryCelebrator
+//==================
+function VictoryCelebrator(input_handler) {
+  this.input_handler = input_handler;
+}
+
+VictoryCelebrator.prototype.on_victory = function() {
+  debug.msg('Victory!');
+  this.input_handler.disable_input();
 }
 
 
@@ -343,7 +380,7 @@ Disk.prototype.transfer_to_tower = function(destination) {
   destination.add_disk(this);
   this.tower = destination;
 
-  if(this.on_disk_transferred) this.on_disk_transferred(this);
+  this.on_disk_transferred();
 }
 
 Disk.prototype.draw = function() {
@@ -371,3 +408,7 @@ Disk.prototype.is_top_disk = function() {
 Disk.prototype.toString = function() {
   return 'Disk(width=' + this.width + ', colour=' + this.colour + ')'
 }
+
+// Called when disk is transferred to any tower (including directly back to same tower). External agents
+// may override to implement custom behaviour.
+Disk.prototype.on_disk_transferred = function() { }
