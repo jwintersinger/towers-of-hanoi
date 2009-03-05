@@ -111,11 +111,14 @@ InputHandler.prototype.on_canvas_mousemove = function(event) {
   var coords = this.coordinate_finder.get_mouse_coordinates(event);
   this.disk.move_to(coords.x - this.dx, coords.y - this.dy);
   this.tower_manager.draw();
+  this.show_distance_to_each_tower();
+}
 
-  //debug.clear();
-  //debug.msg('Distance to tower 1: ' + this.disk.centre.distance_to(this.tower_manager.towers[0].top));
-  //debug.msg('Distance to tower 2: ' + this.disk.centre.distance_to(this.tower_manager.towers[1].top));
-  //debug.msg('Distance to tower 3: ' + this.disk.centre.distance_to(this.tower_manager.towers[2].top));
+InputHandler.prototype.show_distance_to_each_tower = function() {
+  debug.clear();
+  debug.msg('Distance to tower 1: ' + this.disk.centre.distance_to(this.tower_manager.towers[0].top));
+  debug.msg('Distance to tower 2: ' + this.disk.centre.distance_to(this.tower_manager.towers[1].top));
+  debug.msg('Distance to tower 3: ' + this.disk.centre.distance_to(this.tower_manager.towers[2].top));
 }
 
 InputHandler.prototype.on_canvas_mouseup = function(event) {
@@ -256,19 +259,15 @@ TowerManager.prototype.get_all_disks = function() {
 }
 
 TowerManager.prototype.find_closest_tower = function(point) {
-  // TODO: refactor to eliminate duplication
-  var closest_tower = this.towers[0];
-  var closest_distance = this.towers[0].top.distance_to(point);
-
-  for(var i = 1; i < this.towers.length; i++) {
-    var distance = this.towers[i].top.distance_to(point);
-    if(distance < closest_distance) {
-      closest_tower = this.towers[i];
-      closest_distance = distance;
-    }
+  var distances = [];
+  for(i in this.towers) {
+    distances.push({'tower':    this.towers[i],
+                    'distance': this.towers[i].top.distance_to(point)});
   }
-  return closest_tower;
+  distances.sort(function(a, b) { return a.distance - b.distance; });
+  return distances[0]['tower'];
 }
+
 
 TowerManager.prototype.clear_canvas = function() {
   this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
