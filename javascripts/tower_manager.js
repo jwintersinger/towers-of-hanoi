@@ -1,5 +1,5 @@
-function TowerManager(ctx, disks_count) {
-  this.ctx = ctx;
+function TowerManager(canvas, disks_count) {
+  this.canvas = canvas;
   this.disks_count = parseInt(disks_count, 10);
   this.towers_count = 3;
   this.create_towers();
@@ -15,7 +15,7 @@ TowerManager.prototype.add_initial_disks = function() {
 }
 
 TowerManager.prototype.draw = function() {
-  this.clear_canvas();
+  this.canvas.clear();
   for(i in this.towers) {
     this.towers[i].draw();
   }
@@ -25,7 +25,7 @@ TowerManager.prototype.create_towers = function() {
   this.towers = [];
   var x = 0;
   for(var i = 0; i < this.towers_count; i++) {
-    var tower = new Tower(new Point(x, 0), this.ctx);
+    var tower = new Tower(new Point(x, 0), this.canvas.ctx);
     this.towers.push(tower);
     x += (11/10)*tower.base.width;
   }
@@ -54,11 +54,6 @@ TowerManager.prototype.find_closest_tower = function(point) {
   return distances[0]['tower'];
 }
 
-
-// This method might be more comfortable in another class -- its purpose is somewhat orthogonal to TowerManager's.
-TowerManager.prototype.clear_canvas = function() {
-  this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
-}
 
 TowerManager.prototype.toString = function() {
   return 'TowerManager( ' + this.towers + ' )';
