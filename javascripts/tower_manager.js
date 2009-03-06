@@ -10,7 +10,12 @@ TowerManager.prototype.add_initial_disks = function() {
   var width = this.towers[0].base.width;
   for(var i = 0; i < this.disks_count; i++) {
     width -= 20;
-    new Disk(this.towers[0], width, generate_random_colour());
+    try {
+      new Disk(this.towers[0], width, generate_random_colour());
+    } catch(e if e == 'DiskTooNarrowException') {
+      debug.msg('Tower insufficiently wide to hold more disks.');
+      break;
+    }
   }
 }
 
@@ -25,7 +30,7 @@ TowerManager.prototype.create_towers = function() {
   this.towers = [];
   var x = 0;
   for(var i = 0; i < this.towers_count; i++) {
-    var tower = new Tower(new Point(x, 0), this.canvas.ctx);
+    var tower = new Tower(new Point(x, 0), this.disks_count*Disk.height + 60, this.canvas.ctx);
     this.towers.push(tower);
     x += (11/10)*tower.base.width;
   }

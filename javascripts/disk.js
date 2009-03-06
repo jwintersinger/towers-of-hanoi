@@ -1,8 +1,15 @@
 function Disk(tower, width, colour) {
   this.colour = colour;
-  this.width = width;
-  this.height = 15;
+  this.set_width(width, tower.stem.width + 4);
+  this.height = Disk.height;
   this.transfer_to_tower(tower);
+}
+
+Disk.height = 15;
+
+Disk.prototype.set_width = function(width, minimum_width) {
+  if(width < minimum_width) throw 'DiskTooNarrowException';
+  this.width = width;
 }
 
 Disk.prototype.move_to = function(point) {
