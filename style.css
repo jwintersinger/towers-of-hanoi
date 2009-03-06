@@ -12,6 +12,7 @@
 }
 
 #victory-notification {
+  display: none;
   position: absolute;
   left: 0;
   top: 0;
@@ -24,13 +25,22 @@
 }
 
 #victory-message {
-  background-color: white;
-  margin: 35% auto 0 auto;
+  background-color: #fff;
+  margin: 20% auto 0 auto;
   width: 40%;
   padding: 1em;
 }
 
 #victory-message > h1 {
   text-align: center;
-  padding-bottom: 0.6em;
+}
+
+#victory-message > p {
+  padding-top: 1.4em;
+}
+
+input {
+  border: solid 1px #333;
+  background-color: #dedede;
+  padding: 0.2em;
 }

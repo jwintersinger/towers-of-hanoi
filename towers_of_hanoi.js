@@ -1,6 +1,6 @@
 function init() {
   debug = new Debug(); // TODO: convert to singleton to eliminate global variable.
-  new Game();
+  new Game(2);
 }
 window.addEventListener('load', init, false);
 
@@ -27,16 +27,16 @@ function generate_random_colour() {
 //=====
 // Game
 //=====
-function Game() {
-  this.start_new();
+function Game(disks_count) {
+  this.start_new(disks_count);
 }
 
-Game.prototype.start_new = function() {
+Game.prototype.start_new = function(disks_count) {
   debug.msg('New game');
 
   this.recreate_canvas();
   var ctx = this.canvas.getContext('2d');
-  var tower_manager = new TowerManager(ctx);
+  var tower_manager = new TowerManager(ctx, disks_count);
   var input_handler = new InputHandler(ctx, tower_manager);
   var game_state = new GameState(tower_manager, input_handler);
   var victory_celebrator = new VictoryCelebrator(input_handler);
@@ -223,10 +223,10 @@ ElementCoordinateFinder.prototype.get_offset_y = function() {
 //=============
 // TowerManager
 //=============
-function TowerManager(ctx) {
+function TowerManager(ctx, disks_count) {
   this.ctx = ctx;
+  this.disks_count = parseInt(disks_count, 10);
   this.towers_count = 3;
-  this.disks_count = 2;
   this.create_towers();
   this.add_initial_disks();
 }
@@ -339,9 +339,14 @@ function VictoryCelebrator(input_handler) {
 }
 
 VictoryCelebrator.prototype.on_victory = function() {
-  debug.msg('<strong>Victory!</strong>');
   this.input_handler.disable_input();
-  new Game();
+
+  var victory_notification = document.getElementById('victory-notification');
+  victory_notification.style.display = 'block';
+  document.getElementById('play-again').addEventListener('click', function() {
+      victory_notification.style.display = 'none';
+      new Game(document.getElementById('disks-count').value);
+  }, false);
 }
 
 
