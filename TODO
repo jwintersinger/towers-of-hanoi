@@ -10,3 +10,12 @@ Track high scores of user through cookies -- maybe store JSON in cookie
 Implement animation of disk onto tower
 Add AI solver
 Inform user of number of moves he took, minimum number of moves, percentage delta
+Make canvas resize if window resized
+  Problem: must force redraw, since canvas goes blank when resized
+    Which means that Canvas would need reference to TowerManager
+  Canvas.prototype.make_canvas_resize_if_window_resized = function() {
+    var self = this;
+    window.addEventListener('resize', function() {
+        self.resize_to_client_width();
+    }, false);
+  }

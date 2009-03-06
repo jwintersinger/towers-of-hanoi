@@ -1,12 +1,18 @@
 function Canvas(canvas_id) {
   this.canvas_id = canvas_id;
   this.recreate();
+  this.resize_to_client_width();
 }
 
 Canvas.prototype.load_canvas = function() {
   this.canvas = document.getElementById(this.canvas_id);
   this.ctx = this.canvas.getContext('2d');
 }
+
+Canvas.prototype.resize_to_client_width = function() {
+  this.canvas.width = window.innerWidth;
+}
+
 
 Canvas.prototype.clear = function() {
   this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
