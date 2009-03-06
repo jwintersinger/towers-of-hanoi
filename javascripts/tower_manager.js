@@ -11,10 +11,12 @@ TowerManager.prototype.add_initial_disks = function() {
   for(var i = 0; i < this.disks_count; i++) {
     width -= 20;
     try {
-      new Disk(this.towers[0], width, generate_random_colour());
-    } catch(e if e == 'DiskTooNarrowException') {
-      debug.msg('Tower insufficiently wide to hold more disks.');
-      break;
+      new Disk(this.towers[0], width, Colour.random().toString());
+    } catch(e) {
+      if(e == 'DiskTooNarrowException') {
+        debug.msg('Tower insufficiently wide to hold more disks.');
+        break;
+      } else { throw e; }
     }
   }
 }
