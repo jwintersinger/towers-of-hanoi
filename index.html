@@ -1,10 +1,23 @@
 <html>
   <head>
+    <title>Towers of Hanoi</title>
     <script type="text/javascript" src="towers_of_hanoi.js"></script>
+    <link rel="stylesheet" type="text/css" href="style.css"></link>
   </head>
 
   <body>
-    <canvas id="canvas" width="700" height="140"></canvas>
+    <canvas id="canvas" width="600" height="140"></canvas>
+
+    <div id="victory-notification">
+      <div id="victory-message">
+        <h1>Victory!</h1>
+        <p>
+          Congratulations! You just <a href="http://en.wikipedia.org/wiki/Towers_of_hanoi#Origins">ended the world</a>.
+          Thanks a lot, you jerk.
+        </p>
+      </div>
+    </div>
+
     <div id="debug"></div>
   </body>
 </html>
