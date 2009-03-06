@@ -21,7 +21,7 @@
 
   /* Can't use opacity, as child elements inherit it.
      Can't use rgba background-color, as only Firefox 3 & Chrome support it. */
-  background-image: url('black-translucent.png');
+  background-image: url('../images/black-translucent.png');
 }
 
 #victory-message {
