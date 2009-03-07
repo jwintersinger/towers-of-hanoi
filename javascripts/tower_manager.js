@@ -24,7 +24,10 @@ TowerManager.prototype.create_towers = function() {
   var stem_height = this.disks_count*Disk.height + 40;
   var base_horizontal_separation = 16;
 
-  var x = 0;
+  var towers_width = base_width*this.towers_count + base_horizontal_separation*(this.towers_count - 1);
+  var x = (this.canvas.width - towers_width)/2;
+  var vertical_padding = 42;
+
   for(var i = 0; i < this.towers_count; i++) {
     // Ideally, towers should be able to resize themselves based on the number of disks they hold, freeing TowerManager
     // from needing to know what size to create them. Rather than take such an approach, though, I have TowerManager
@@ -42,10 +45,11 @@ TowerManager.prototype.create_towers = function() {
     //     the towers to dynamically resize, and one used during gameplay that does not cause such resizes to occur.
     //
     // Given these concerns, I determined that including tower size-calculation logic in TowerManager is acceptable.
-    var tower = new Tower(new Point(x, 0), base_width, stem_height, this.canvas.ctx);
+    var tower = new Tower(new Point(x, vertical_padding), base_width, stem_height, this.canvas.ctx);
     this.towers.push(tower);
     x += base_width + base_horizontal_separation;
   }
+  this.canvas.set_height(this.towers[0].height + 2*vertical_padding);
 }
 
 TowerManager.prototype.calculate_disk_widths = function() {

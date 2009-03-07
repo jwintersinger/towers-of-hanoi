@@ -10,7 +10,11 @@ Canvas.prototype.load_canvas = function() {
 }
 
 Canvas.prototype.resize_to_client_width = function() {
-  this.canvas.width = window.innerWidth;
+  this.canvas.width = this.width = window.innerWidth; // this.width can be queried by external agents.
+}
+
+Canvas.prototype.set_height = function(height) {
+  this.canvas.height = this.height = height; // this.height can be queried by external agents.
 }
 
 

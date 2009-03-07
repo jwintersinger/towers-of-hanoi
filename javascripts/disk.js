@@ -21,7 +21,7 @@ Disk.prototype.transfer_to_tower = function(destination) {
 
   if(this.tower) this.tower.remove_disk(this);
   this.move_to(new Point(destination.position.x + (destination.base.width - this.width)/2,
-                         destination.position.y + (destination.disks_top - this.height)));
+                         destination.disks_top - this.height));
   destination.add_disk(this);
   this.tower = destination;
 
