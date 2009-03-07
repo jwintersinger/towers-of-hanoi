@@ -1,16 +1,12 @@
 function Disk(tower, width, colour) {
   this.colour = colour;
-  this.set_width(width, tower.stem.width + 4);
+  this.width = width;
   this.height = Disk.height;
   this.transfer_to_tower(tower);
 }
 
+// Specified as class property so that TowerManager can calculate how high to make towers, based on number of disks.
 Disk.height = 15;
-
-Disk.prototype.set_width = function(width, minimum_width) {
-  if(width < minimum_width) throw 'DiskTooNarrowException';
-  this.width = width;
-}
 
 Disk.prototype.move_to = function(point) {
   this.position = point;

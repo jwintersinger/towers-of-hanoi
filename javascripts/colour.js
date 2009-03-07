@@ -34,7 +34,6 @@ Colour.convert_hsv_to_rgb = function(hsv) {
   var h = hsv[0], s = hsv[1], v = hsv[2];
   h = (h/60) % 6;
   var h_i = Math.floor(h);
-  debug.msg(h_i);
   var f = h - h_i;
   var p = v*(1 - s);
   var q = v*(1 - f*s);
@@ -59,8 +58,6 @@ Colour.convert_hsv_to_rgb = function(hsv) {
     case 5:
       var rgb = [v, p, q];
       break;
-    default:
-      debug.msg(h_i);
   }
   return new Colour(rgb.map(function(a) { return Math.round(a*256); }));
 }

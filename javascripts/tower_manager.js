@@ -7,18 +7,8 @@ function TowerManager(canvas, disks_count) {
 }
 
 TowerManager.prototype.add_initial_disks = function() {
-  var width = this.towers[0].base.width;
-  for(var i = 0; i < this.disks_count; i++) {
-    width -= 20;
-    try {
-      new Disk(this.towers[0], width, Colour.random().toString());
-    } catch(e) {
-      if(e == 'DiskTooNarrowException') {
-        debug.msg('Tower insufficiently wide to hold more disks.');
-        break;
-      } else { throw e; }
-    }
-  }
+  var disk_widths = this.calculate_disk_widths();
+  while(width = disk_widths.pop()) new Disk(this.towers[0], width, Colour.random().toString());
 }
 
 TowerManager.prototype.draw = function() {
@@ -30,12 +20,41 @@ TowerManager.prototype.draw = function() {
 
 TowerManager.prototype.create_towers = function() {
   this.towers = [];
+  var base_width = this.calculate_disk_widths().pop() + 30;
+  var stem_height = this.disks_count*Disk.height + 40;
+  var base_horizontal_separation = 16;
+
   var x = 0;
   for(var i = 0; i < this.towers_count; i++) {
-    var tower = new Tower(new Point(x, 0), this.disks_count*Disk.height + 60, this.canvas.ctx);
+    // Ideally, towers should be able to resize themselves based on the number of disks they hold, freeing TowerManager
+    // from needing to know what size to create them. Rather than take such an approach, though, I have TowerManager
+    // calculate the size of the towers for two reasons:
+    //
+    //   * All towers must be the same size, or otherwise visual consistency is ruined. This means that a tower would
+    //     need to know how to resize its brethren, or TowerManager would need to query for the largest tower, then set
+    //     the rest of the towers to that size. The first approach violates separation of concerns, since a tower
+    //     should only know about itself; the second approach requires TowerManager to deal with resizing towers,
+    //     which means I might as well have it calculate the size, too.
+    //
+    //   * Disks added to towers during game initialization are added in the same manner as when a disk is moved from
+    //     tower to tower as a result of user input. As such, if towers were responsible for resizing themselves based
+    //     on number of disks, I'd have to create two disk-adding routines: one during game initialization that causes
+    //     the towers to dynamically resize, and one used during gameplay that does not cause such resizes to occur.
+    //
+    // Given these concerns, I determined that including tower size-calculation logic in TowerManager is acceptable.
+    var tower = new Tower(new Point(x, 0), base_width, stem_height, this.canvas.ctx);
     this.towers.push(tower);
-    x += (11/10)*tower.base.width;
+    x += base_width + base_horizontal_separation;
   }
+}
+
+TowerManager.prototype.calculate_disk_widths = function() {
+  var disk_widths = [];
+  var width = 40;
+  for(var i = 0; i < this.disks_count; i++) {
+    disk_widths.push(width += 20);
+  }
+  return disk_widths;
 }
 
 TowerManager.prototype.get_clicked_disk = function(point) {

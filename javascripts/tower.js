@@ -1,9 +1,9 @@
-function Tower(position, stem_height, ctx) {
+function Tower(position, base_width, stem_height, ctx) {
   this.position = position;
   this.ctx = ctx;
   this.disks = [];
 
-  this.base = {'width': 160, 'height': 20};
+  this.base = {'width': base_width, 'height': 20};
   this.stem = {'width': 20, 'height': stem_height};
   this.base.position = new Point(this.position.x, this.position.y + this.stem.height);
   this.stem.position = new Point(this.position.x + (this.base.width/2 - this.stem.width/2), this.position.y);
