@@ -7,3 +7,6 @@ function shuffle(arr) {
   arr.sort(function(a, b) { return Math.random() - 0.5; });
 }
 
+function biggest(a, b) {
+  return a > b ? a : b;
+}
