@@ -22,15 +22,22 @@
 
   <body>
     <canvas id="canvas" width="600" height="300"></canvas>
+    <div id="introduction">
+      <div id="introduction-message">
+        <h1>The Towers of Hanoi</h1>
+        <p>Your objective in <a href="http://en.wikipedia.org/wiki/Tower_of_Hanoi">Towers of Hanoi</a> is simple: move
+          your entire stack of disks from the first tower to one of the other two towers. There's only one
+          catch&mdash;you may not place a larger disk on top of a smaller one.</p>
+        <input id="start-new-game" type="button" value="Start game" />
+      </div>
+    </div>
     <div id="victory-notification">
       <div id="victory-message">
         <h1>Victory!</h1>
-        <p>
-          Congratulations! You just
-          <a href="http://en.wikipedia.org/wiki/Towers_of_hanoi#Origins">ended the world</a>. Thanks a lot, you jerk.
-        </p>
+        <p>Congratulations! You just
+          <a href="http://en.wikipedia.org/wiki/Towers_of_hanoi#Origins">ended the world</a>.</p>
         <p><input id="play-again" type="button" value="Play again" /> with
-          <input id="disks-count" type="text" size="2" maxlength="3" value="3" /> disks.</p>
+          <input id="disks-count" type="text" size="2" maxlength="2" value="3" /> disks.</p>
       </div>
     </div>
     <div id="debug"></div>

@@ -1,12 +1,8 @@
-Split Javascript into separate files
-  Implement build system to create production copy
-Add better victory behaviour
-  Dim screen, put message ahead of it, provide option to play again
-  "Victory! \n\n You just ended the world [link to Wikipedia article]. Way to go, you jerk. Would you like to play again?"
+Implement build system to create production copy
 Provide explanation of game, its objectives, link to Wikipedia article
-Provide means of choosing number of disks
+Provide means of choosing number of disks at game start
 Track high scores of user through cookies -- maybe store JSON in cookie
-Implement animation of disk onto tower
+Implement animation of disk sliding onto tower
 Add AI solver
 Inform user of number of moves he took, minimum number of moves, percentage delta
 Make canvas resize if window resized
@@ -18,3 +14,5 @@ Make canvas resize if window resized
         self.resize_to_client_width();
     }, false);
   }
+Improve performance by eliminating creation of new Points, and simply adjusting their x/y coordinates instead
+  Search codebase for "new Point" to find such instances

@@ -4,6 +4,7 @@
 }
 
 #debug {
+  display: none;
   margin: 5em 0 0 5em;;
 }
 
@@ -11,21 +12,38 @@
   padding: 0.1em;
 }
 
-#victory-notification {
-  display: none;
+#introduction, #victory-notification {
   position: absolute;
   left: 0;
   top: 0;
   width: 100%;
   height: 100%;
-
   /* Can't use opacity, as child elements inherit it.
      Can't use rgba background-color, as only Firefox 3 & Chrome support it. */
   background-image: url('../images/black-translucent.png');
 }
 
-#victory-message {
+#introduction-message, #victory-message {
   background-color: #fff;
+}
+
+#introduction-message {
+  padding: 2em;
+  width: 50%;
+  /* TODO: remove hardcoded value for margin-top. */
+  margin: 220px auto 0 auto;
+}
+
+#introduction-message > p {
+  margin-top: 0.4em;
+  margin-bottom: 1.3em;
+}
+
+#victory-notification {
+  display: none;
+}
+
+#victory-message {
   margin: 20% auto 0 auto;
   width: 40%;
   padding: 1em;
