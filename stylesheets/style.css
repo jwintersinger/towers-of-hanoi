@@ -29,7 +29,7 @@
 
 #introduction-message {
   padding: 2em;
-  width: 50%;
+  width: 30em;
   /* TODO: remove hardcoded value for margin-top. */
   margin: 220px auto 0 auto;
 }
@@ -45,7 +45,7 @@
 
 #victory-message {
   margin: 20% auto 0 auto;
-  width: 40%;
+  width: 25em;
   padding: 1em;
 }
 
